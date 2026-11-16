@@ -116,7 +116,8 @@ endif
 
 COMMON_ASM_RISCV_RVV_SRCS=\
         $(COMMON_SRCDIR)/riscv/sad_rvv.c \
-        $(COMMON_SRCDIR)/riscv/satd_rvv.c
+        $(COMMON_SRCDIR)/riscv/satd_rvv.c \
+        $(COMMON_SRCDIR)/riscv/ipred_rvv.c
 
 COMMON_OBJSRISCV_RVV += $(COMMON_ASM_RISCV_RVV_SRCS:.c=.$(OBJ))
 

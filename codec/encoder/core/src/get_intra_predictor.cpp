@@ -611,6 +611,10 @@ void WelsI16x16LumaPredDcNA_c (uint8_t* pPred, uint8_t* pRef, const int32_t kiSt
   memset (pPred, 0x80, 256);
 }
 
+#if defined(HAVE_RVV)
+extern "C" void WelsI16x16LumaPredPlane_rvv (uint8_t*, uint8_t*, int32_t);
+#endif
+
 void WelsInitIntraPredFuncs (SWelsFuncPtrList* pFuncList, const uint32_t kuiCpuFlag) {
   pFuncList->pfGetLumaI16x16Pred[I16_PRED_V] =      WelsI16x16LumaPredV_c;
   pFuncList->pfGetLumaI16x16Pred[I16_PRED_H] =      WelsI16x16LumaPredH_c;
@@ -742,6 +746,12 @@ void WelsInitIntraPredFuncs (SWelsFuncPtrList* pFuncList, const uint32_t kuiCpuF
     pFuncList->pfGetLumaI16x16Pred[I16_PRED_P] = WelsI16x16LumaPredPlane_lsx;
   }
 #endif//HAVE_LSX
+
+#if defined(HAVE_RVV)
+  if (kuiCpuFlag & WELS_CPU_RVV) {
+    pFuncList->pfGetLumaI16x16Pred[I16_PRED_P] = WelsI16x16LumaPredPlane_rvv;
+  }
+#endif//HAVE_RVV
 
 #if defined(HAVE_LASX)
   if (kuiCpuFlag & WELS_CPU_LASX) {

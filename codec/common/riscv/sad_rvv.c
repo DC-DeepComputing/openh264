@@ -69,17 +69,47 @@ SAD_FUNC (8x4,    8,  4)
 SAD_FUNC (4x8,    4,  8)
 SAD_FUNC (4x4,    4,  4)
 
-/* SadFour = 以 ref 为中心的上/下/左/右四个偏移各做一次 SAD，
- * 顺序与 C 版严格一致（pSad[0]=-stride, [1]=+stride, [2]=-1, [3]=+1），
- * 否则码流会变、md5 对不上。 */
+/* SadFour batched: 4 directions share one src row load.
+ * Original did 4 separate sad_core_rvv calls => src read 4 times.
+ * Here each row loads src ONCE and 4 ref rows (up/down/left/right),
+ * accumulating into 4 independent vectors in lockstep.
+ * Order pSad[0]=-stride,[1]=+stride,[2]=-1,[3]=+1 preserved exactly. */
+#define SAD_ROW_ACC(acc, s, r)                                                 \
+  do {                                                                         \
+    vuint8m1_t v_  = __riscv_vle8_v_u8m1 ((r), vl);                            \
+    vuint8m1_t mx_ = __riscv_vmaxu_vv_u8m1 ((s), v_, vl);                      \
+    vuint8m1_t mn_ = __riscv_vminu_vv_u8m1 ((s), v_, vl);                      \
+    vuint8m1_t d_  = __riscv_vsub_vv_u8m1 (mx_, mn_, vl);                      \
+    (acc) = __riscv_vwaddu_wv_u16m2 ((acc), d_, vl);                           \
+  } while (0)
+
 #define SAD_FOUR_FUNC(name, w, h)                                              \
 void WelsSampleSadFour##name##_rvv (uint8_t* pSrc, int32_t iSrcStride,         \
                                     uint8_t* pRef, int32_t iRefStride,         \
                                     int32_t* pSad) {                           \
-  pSad[0] = sad_core_rvv (pSrc, iSrcStride, pRef - iRefStride, iRefStride, w, h); \
-  pSad[1] = sad_core_rvv (pSrc, iSrcStride, pRef + iRefStride, iRefStride, w, h); \
-  pSad[2] = sad_core_rvv (pSrc, iSrcStride, pRef - 1,          iRefStride, w, h); \
-  pSad[3] = sad_core_rvv (pSrc, iSrcStride, pRef + 1,          iRefStride, w, h); \
+  const size_t vl = __riscv_vsetvl_e8m1 ((size_t)(w));                         \
+  vuint16m2_t a0 = __riscv_vmv_v_x_u16m2 (0, vl);                              \
+  vuint16m2_t a1 = __riscv_vmv_v_x_u16m2 (0, vl);                              \
+  vuint16m2_t a2 = __riscv_vmv_v_x_u16m2 (0, vl);                              \
+  vuint16m2_t a3 = __riscv_vmv_v_x_u16m2 (0, vl);                              \
+  for (int32_t y = 0; y < (h); y++) {                                          \
+    vuint8m1_t s = __riscv_vle8_v_u8m1 (pSrc, vl);                             \
+    SAD_ROW_ACC (a0, s, pRef - iRefStride);                                    \
+    SAD_ROW_ACC (a1, s, pRef + iRefStride);                                    \
+    SAD_ROW_ACC (a2, s, pRef - 1);                                             \
+    SAD_ROW_ACC (a3, s, pRef + 1);                                             \
+    pSrc += iSrcStride;                                                        \
+    pRef += iRefStride;                                                        \
+  }                                                                            \
+  vuint32m1_t seed = __riscv_vmv_v_x_u32m1 (0, 1);                             \
+  pSad[0] = (int32_t) __riscv_vmv_x_s_u32m1_u32 (                              \
+              __riscv_vwredsumu_vs_u16m2_u32m1 (a0, seed, vl));                \
+  pSad[1] = (int32_t) __riscv_vmv_x_s_u32m1_u32 (                              \
+              __riscv_vwredsumu_vs_u16m2_u32m1 (a1, seed, vl));                \
+  pSad[2] = (int32_t) __riscv_vmv_x_s_u32m1_u32 (                              \
+              __riscv_vwredsumu_vs_u16m2_u32m1 (a2, seed, vl));                \
+  pSad[3] = (int32_t) __riscv_vmv_x_s_u32m1_u32 (                              \
+              __riscv_vwredsumu_vs_u16m2_u32m1 (a3, seed, vl));                \
 }
 
 SAD_FOUR_FUNC (16x16, 16, 16)
