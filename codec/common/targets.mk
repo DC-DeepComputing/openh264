@@ -114,6 +114,22 @@ COMMON_OBJS += $(COMMON_OBJSLOONGARCH_LASX)
 endif
 endif
 
+COMMON_ASM_RISCV_RVV_SRCS=\
+        $(COMMON_SRCDIR)/riscv/sad_rvv.c \
+        $(COMMON_SRCDIR)/riscv/satd_rvv.c
+
+COMMON_OBJSRISCV_RVV += $(COMMON_ASM_RISCV_RVV_SRCS:.c=.$(OBJ))
+
+# Hand-written RVV SATD (batched full-width kernels): assembled via the
+# generic %.$(OBJ): %.S rule (CCAS) below, so tracked separately.
+COMMON_ASM_RISCV_RVV_HB_SRCS=\
+        $(COMMON_SRCDIR)/riscv/satd_hb.S
+COMMON_OBJSRISCV_RVV_HB += $(COMMON_ASM_RISCV_RVV_HB_SRCS:.S=.$(OBJ))
+ifeq ($(ASM_ARCH), riscv)
+COMMON_OBJS += $(COMMON_OBJSRISCV_RVV)
+COMMON_OBJS += $(COMMON_OBJSRISCV_RVV_HB)
+endif
+
 OBJS += $(COMMON_OBJS)
 
 $(COMMON_SRCDIR)/%.$(OBJ): $(COMMON_SRCDIR)/%.cpp

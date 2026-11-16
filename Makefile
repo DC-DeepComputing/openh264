@@ -141,6 +141,17 @@ $(LSX_OBJS): CFLAGS += -mlsx
 $(LASX_OBJS): CFLAGS += -mlasx
 endif
 
+ifeq (riscv64, $(ARCH))
+RVV_OBJS := \
+    $(SRC_PATH)codec/common/riscv/sad_rvv.o \
+    $(SRC_PATH)codec/common/riscv/satd_rvv.o \
+    $(SRC_PATH)codec/common/riscv/satd_hb.o
+# 注意：不在此处加 -march=rv64gcv。X100 上 gcc 默认 -march 已含 v
+# （gcc -Q --help=target | grep march= 可验证），额外覆盖反而会降级扩展；
+# 若换到默认 arch 不含 v 的工具链，这里需补 -march=rv64gcv。
+$(RVV_OBJS): CFLAGS += -I$(SRC_PATH)codec/common/riscv
+endif
+
 INCLUDES += -I$(SRC_PATH)codec/api/wels -I$(SRC_PATH)codec/common/inc -Icodec/common/inc
 
 DECODER_INCLUDES += \

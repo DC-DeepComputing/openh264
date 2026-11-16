@@ -376,7 +376,21 @@ uint32_t WelsCPUFeatureDetect (int32_t* pNumberOfLogicProcessors) {
   return flags;
 }
 
-#else /* Neither X86_ASM, HAVE_NEON, HAVE_NEON_AARCH64, loongarch nor mips */
+#elif defined(__riscv) && defined(__linux__)
+/* RISC-V：V 是可选扩展，不能靠编译期符号判断，运行时看 HWCAP 的 'v' 位 */
+#include <sys/auxv.h>
+#ifndef RISCV_HWCAP_V
+#define RISCV_HWCAP_V    (1UL << ('v' - 'a'))
+#endif
+
+uint32_t WelsCPUFeatureDetect (int32_t* pNumberOfLogicProcessors) {
+  uint32_t flags = 0;
+  if ((unsigned long)getauxval(AT_HWCAP) & RISCV_HWCAP_V)
+    flags |= WELS_CPU_RVV;
+  return flags;
+}
+
+#else /* Neither X86_ASM, HAVE_NEON, HAVE_NEON_AARCH64, loongarch, riscv nor mips */
 
 uint32_t WelsCPUFeatureDetect (int32_t* pNumberOfLogicProcessors) {
   return 0;

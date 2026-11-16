@@ -90,6 +90,9 @@
 #define WELS_CPU_VFPv3      0x000002    /* VFPv3 */
 #define WELS_CPU_NEON       0x000004    /* NEON */
 
+/* For riscv */
+#define WELS_CPU_RVV        0x000001    /* riscv vector 1.0 */
+
 /* For loongson */
 #define WELS_CPU_MMI        0x00000001  /* mmi */
 #define WELS_CPU_MSA        0x00000002  /* msa */

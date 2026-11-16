@@ -54,6 +54,16 @@ endif
 endif
 endif
 
+#for riscv64
+ifneq ($(filter riscv64, $(ARCH)),)
+ifeq ($(USE_ASM), Yes)
+ASM_ARCH = riscv
+ASMFLAGS += -I$(SRC_PATH)codec/common/riscv/
+CFLAGS   += -DHAVE_RVV
+CXXFLAGS += -DHAVE_RVV
+endif
+endif
+
 #for loongarch
 ifneq ($(filter loongarch64, $(ARCH)),)
 ifeq ($(USE_ASM), Yes)
