@@ -143,6 +143,25 @@ int32_t WelsIntra8x8Combined3Sad_lasx (uint8_t*, int32_t, uint8_t*, int32_t, int
                                        uint8_t*);
 #endif
 
+#if defined (HAVE_RVV)
+int32_t WelsSampleSatd16x16_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd16x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd8x16_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd8x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd4x4_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd8x4_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd4x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+/* Hand-written RVV SATD (codec/common/riscv/satd_hb.S): batched full-width
+ * kernels + abs-fold identity. Kernel-level measured speedups over scalar C:
+ * 8x4 1.12x, 8x8 1.91x, 8x16/16x8 1.94x, 16x16 1.90x. 4x4 (0.55x) / 4x8 (0.99x)
+ * stay on C -- 16-element ops have no vectorization headroom at VLEN=256. */
+int32_t WelsSampleSatd16x16_rvv_hb (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd16x8_rvv_hb (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd8x16_rvv_hb (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd8x8_rvv_hb (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSatd8x4_rvv_hb (uint8_t*, int32_t, uint8_t*, int32_t);
+#endif
+
 #if defined(__cplusplus)
 }
 #endif//__cplusplus
