@@ -132,6 +132,23 @@ void WelsSampleSadFour16x8_lasx (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*)
 void WelsSampleSadFour16x16_lasx (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
 #endif
 
+#if defined (HAVE_RVV)
+int32_t WelsSampleSad16x16_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSad16x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSad8x16_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSad8x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSad8x4_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSad4x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+int32_t WelsSampleSad4x4_rvv (uint8_t*, int32_t, uint8_t*, int32_t);
+void WelsSampleSadFour16x16_rvv (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
+void WelsSampleSadFour16x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
+void WelsSampleSadFour8x16_rvv (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
+void WelsSampleSadFour8x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
+void WelsSampleSadFour8x4_rvv (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
+void WelsSampleSadFour4x8_rvv (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
+void WelsSampleSadFour4x4_rvv (uint8_t*, int32_t, uint8_t*, int32_t, int32_t*);
+#endif
+
 #if defined(__cplusplus)
 }
 #endif//__cplusplus
