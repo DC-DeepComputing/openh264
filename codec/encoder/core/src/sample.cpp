@@ -366,6 +366,39 @@ void WelsInitSampleSadFunc (SWelsFuncPtrList* pFuncList, uint32_t uiCpuFlag) {
   pFuncList->sSampleDealingFuncs.pfIntra16x16Combined3Satd = NULL;
   pFuncList->sSampleDealingFuncs.pfIntra16x16Combined3Sad  = NULL;
 
+#if defined (HAVE_RVV)
+  if (uiCpuFlag & WELS_CPU_RVV) {
+    pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_16x16] = WelsSampleSad16x16_rvv;
+    pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_16x8 ] = WelsSampleSad16x8_rvv;
+    pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_8x16 ] = WelsSampleSad8x16_rvv;
+    pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_8x8  ] = WelsSampleSad8x8_rvv;
+    pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_8x4  ] = WelsSampleSad8x4_rvv;
+    /* SAD 4x8 / 4x4 不派发（含 SadFour）：内核级实测 sad4x4 0.66x / sad4x8 1.13x /
+     * sadfour4x4 0.79x / sadfour4x8 1.16x（干净 C 基线，checkasm-openh264-rvv-
+     * report-v2 §3）。早前的"转正"结论基于被 gcc autovec 污染的慢 C，已纠正。
+     * 16 元素算子在 VLEN=256 上无向量化空间，与 SATD 4x4 同一规律。*/
+    pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_16x16] = WelsSampleSadFour16x16_rvv;
+    pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_16x8] = WelsSampleSadFour16x8_rvv;
+    pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_8x16] = WelsSampleSadFour8x16_rvv;
+    pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_8x8] = WelsSampleSadFour8x8_rvv;
+    pFuncList->sSampleDealingFuncs.pfSample4Sad[BLOCK_8x4] = WelsSampleSadFour8x4_rvv;
+    /* SATD 分尺寸派发（checkasm 内核级实测，见 reports/checkasm-openh264-*）：
+     * 旧 satd_rvv.c（C intrinsics，vrgather 密集）全尺寸 0.46x，整体回退 C。
+     * 新 satd_hb.S（手写满宽批处理 + abs-fold 恒等式）宽尺寸全面转正：
+     *   8x8 1.91x / 8x16 1.94x / 16x8 1.94x / 16x16 1.90x / 8x4 1.12x。
+     * 4x4 (0.55x) / 4x8 (0.99x) 保留标量 C：16 元素算子在 VLEN=256 上没有
+     * 向量化收益空间（4x4 的 C 已是 gcc -O2 全展开标量极限，4x8 的 16 次窄
+     * 装载是物理极限）。*/
+    pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_16x16] = WelsSampleSatd16x16_rvv_hb;
+    pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_16x8 ] = WelsSampleSatd16x8_rvv_hb;
+    pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_8x16 ] = WelsSampleSatd8x16_rvv_hb;
+    pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_8x8  ] = WelsSampleSatd8x8_rvv_hb;
+    pFuncList->sSampleDealingFuncs.pfSampleSatd[BLOCK_8x4  ] = WelsSampleSatd8x4_rvv_hb;
+    /* BLOCK_4x4 / BLOCK_4x8 不派发，沿用上方 C 版本。*/
+
+  }
+#endif
+
 #if defined (X86_ASM)
   if (uiCpuFlag & WELS_CPU_MMXEXT) {
     pFuncList->sSampleDealingFuncs.pfSampleSad[BLOCK_4x4  ] = WelsSampleSad4x4_mmx;
